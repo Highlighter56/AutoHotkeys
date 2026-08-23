@@ -29,3 +29,12 @@ A centralized repository for personal AutoHotkey v2 scripts, designed to stay sy
 * `Setup.bat` — One-time setup script that installs AHK v2 (if needed) and links the launcher to Windows Startup.
 * `MasterLauncher.ahk` — Auto-generated launcher executed on boot to run your scripts.
 * `Scripts/` — Folder containing all active AutoHotkey scripts.
+
+---
+
+## AutoHotkey Descriptions
+### `MinimizeAndRestoreActiveWindow.ahk`
+- `Ctrl + Alt + M` - Minimize the active window and remember it for later.
+- `Ctrl + Alt + R` - Restore and activate the previously minimized window, preserving its maximized or normal state.
+
+- The script remembers one window at a time, allowing you to switch to another app and return to the minimized window when you are ready.
