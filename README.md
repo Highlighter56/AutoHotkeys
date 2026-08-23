@@ -12,14 +12,14 @@ A centralized repository for personal AutoHotkey v2 scripts, designed to stay sy
 
 ## First-Time Setup on a New PC
 1. **Clone or download** this repository to your computer.
-2. Double-click `Setup.bat` (or run `.\Setup.bat` in Terminal).
-3. Done! All scripts inside `Scripts/` (including subfolders) will launch immediately and run on every boot.
+2. Run `Setup.bat` (Either through the terminal with  `.\Setup.bat`, or Double-click the file to run).
+3. Your Done! All scripts inside `Scripts/` (including subfolders) will launch immediately and run on every boot.
 
 ---
 
 ## Adding New Scripts
 * Save any `.ahk` file inside the `Scripts/` directory or subfolders.
-* Double-click `MasterLauncher.ahk` or reboot your PC to launch new additions.
+* Run `MasterLauncher.ahk` or reboot your PC to launch new scripts that are added after boot.
 
 ---
 
