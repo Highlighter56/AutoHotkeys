@@ -1,22 +1,37 @@
 ﻿#Requires AutoHotkey v2.0
 
-global LastMinimizedID := 0
-global WasMaximized := false
+global SkylineState := Map(
+    "LastMinimizedID", 0,
+    "WasMaximized", false
+)
+
+IsSkippableWindowClass(winClass)
+{
+    return (winClass = "WorkerW" || winClass = "Progman" || winClass = "Shell_TrayWnd")
+}
+
+IsValidWindow(hwnd)
+{
+    if (!hwnd)
+        return false
+
+    return WinExist("ahk_id " hwnd)
+}
 
 ; --- MINIMIZE SHORTCUT: Ctrl + Alt + M ---
 ^!m::
 {
-    global LastMinimizedID, WasMaximized
+    global SkylineState
     ActiveHWND := WinExist("A")
     
-    if (ActiveHWND)
+    if (IsValidWindow(ActiveHWND))
     {
         WinClass := WinGetClass("ahk_id " ActiveHWND)
-        if (WinClass != "WorkerW" && WinClass != "Progman" && WinClass != "Shell_TrayWnd")
+        if (!IsSkippableWindowClass(WinClass))
         {
-            LastMinimizedID := ActiveHWND
+            SkylineState["LastMinimizedID"] := ActiveHWND
             ; Store 1 if maximized, 0 if normal
-            WasMaximized := (WinGetMinMax("ahk_id " ActiveHWND) == 1)
+            SkylineState["WasMaximized"] := (WinGetMinMax("ahk_id " ActiveHWND) == 1)
             
             WinMinimize("ahk_id " ActiveHWND)
         }
@@ -26,16 +41,17 @@ global WasMaximized := false
 ; --- RESTORE SHORTCUT: Ctrl + Alt + R ---
 ^!r::
 {
-    global LastMinimizedID, WasMaximized
-    
-    if (LastMinimizedID && WinExist("ahk_id " LastMinimizedID))
+    global SkylineState
+    LastMinimizedID := SkylineState["LastMinimizedID"]
+
+    if (IsValidWindow(LastMinimizedID))
     {
         MinMaxState := WinGetMinMax("ahk_id " LastMinimizedID)
         
         ; Only do something if the window is currently minimized (-1)
         if (MinMaxState == -1)
         {
-            if (WasMaximized)
+            if (SkylineState["WasMaximized"])
                 WinMaximize("ahk_id " LastMinimizedID)
             else
                 WinRestore("ahk_id " LastMinimizedID)
