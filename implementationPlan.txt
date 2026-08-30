@@ -1,0 +1,64 @@
+Phase 1: Split the repo into two clean utilities
+Create a dedicated MinAndRest script
+Create a dedicated Skyline script
+Keep the launcher and startup flow unchanged
+Keep both scripts in the repo under the same project
+
+Phase 2: Finish MinAndRest
+Keep Ctrl+Alt+M for minimize active window
+Keep Ctrl+Alt+R for restore last minimized window
+Repeated restore while already restored does nothing
+Restore maximized state correctly
+Add monitor fallback logic:
+use original monitor if available
+otherwise use primary or current fallback monitor
+
+Phase 3: Build Skyline v1 core
+Ctrl+Alt+T: track active window
+Ctrl+Alt+Shift+T: untrack active window
+Ctrl+Alt+L: view tracked list
+Keep the tracked list as runtime memory only
+Save and recall preset slots with 1-9
+Loading a preset should clear the previous tracked set and replace it with the preset set
+
+Phase 4: Add app registry + persistence
+Save app name and executable path to a central registry file
+Save preset data separately
+When a preset is recalled:
+try to use the saved app path
+if the app is already open, use it
+if missing, prompt the user to browse to the executable
+save the new path in the registry if confirmed
+
+Phase 5: Build the master menu with 0
+0 opens the main UI
+Section 1: tracked windows
+Section 2: preset list with save/load/edit buttons
+Section 3: saved app registry entries with add/remove actions
+
+Phase 6: Add preset editing
+Each preset gets:
+load current tracked set into this preset
+edit preset contents
+Editing should allow:
+app selection from saved registry
+monitor selection
+layout mode selection
+For the first version, keep layout modes simple:
+full monitor
+left half
+right half
+custom x/y/w/h
+This avoids overcomplicating the first pass
+
+Phase 7: Monitor geometry handling
+Save monitor ID and geometry metadata
+On recall:
+if monitor still exists, restore there
+otherwise use best available monitor
+Keep the fallback logic simple and predictable
+
+Phase 8: Final polish and docs
+rename the minimize/restore file to something clean like MinAndRest.ahk
+update the README after MinAndRest is validated
+update the README again after Skyline is finished
