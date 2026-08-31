@@ -1,3 +1,9 @@
+; TEMP BACKUP ONLY
+; This file is intentionally not launched by the startup flow.
+; Purpose: preserve the GUI-based prototype from the last pass.
+; Known issue: this prototype was introduced before Phase 5 and was rejected for Phase 3.
+; The list should remain a simple non-GUI list until the UI work is intentionally scheduled.
+
 #Requires AutoHotkey v2.0
 #SingleInstance Force
 
@@ -5,6 +11,8 @@ global SkylineState := Map(
     "TrackedOrder", [],
     "TrackedWindows", Map(),
     "ListHwnd", 0,
+    "ListGui", "",
+    "ListTextControl", "",
     "ListTitle", "Skyline - Tracked Windows"
 )
 
@@ -169,8 +177,9 @@ RefreshListWindow(forceFocus := false)
     if (!SkylineState["ListHwnd"] || !IsValidWindow(SkylineState["ListHwnd"]))
         return
 
-    ; Non-GUI list mode intentionally keeps the list as a simple message flow.
-    ; The GUI prototype is preserved in Temp/Skyline.GuiPrototype_2026-08-30.ahk.
+    if (SkylineState["ListTextControl"] != "")
+        SkylineState["ListTextControl"].Value := FormatTrackedSummary()
+
     if (forceFocus)
         WinActivate("ahk_id " SkylineState["ListHwnd"])
 }
@@ -185,10 +194,19 @@ OpenListWindow()
         return
     }
 
-    listText := FormatTrackedSummary()
-    ListHwnd := MsgBox(listText, "Skyline - Tracked Windows", "OK")
-    SkylineState["ListHwnd"] := ListHwnd
-    SkylineState["ListTitle"] := "Skyline - Tracked Windows"
+    gui := Gui("+AlwaysOnTop +ToolWindow", SkylineState["ListTitle"])
+    gui.MarginX := 12
+    gui.MarginY := 12
+    textControl := gui.Add("Text", "w420 h300 +Wrap", FormatTrackedSummary())
+    SkylineState["ListGui"] := gui
+    SkylineState["ListTextControl"] := textControl
+    SkylineState["ListHwnd"] := gui.Hwnd
+    gui.OnEvent("Close", (*) => (
+        SkylineState["ListHwnd"] := 0,
+        SkylineState["ListGui"] := "",
+        SkylineState["ListTextControl"] := ""
+    ))
+    gui.Show("AutoSize")
     ShowStatus("Tracked list opened")
 }
 
@@ -197,6 +215,7 @@ ClearTrackedWindows()
     global SkylineState
     SkylineState["TrackedOrder"] := []
     SkylineState["TrackedWindows"] := Map()
+    RefreshListWindow(false)
     ShowStatus("Cleared tracked windows")
 }
 

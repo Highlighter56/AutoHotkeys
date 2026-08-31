@@ -14,27 +14,37 @@ use original monitor if available
 otherwise use primary or current fallback monitor
 
 Phase 3: Build Skyline v1 core
-Ctrl+Alt+T: track active window
-Ctrl+Alt+Shift+T: untrack active window
-Ctrl+Alt+L: view tracked list
-Keep the tracked list as runtime memory only
-Save and recall preset slots with 1-9
-Loading a preset should clear the previous tracked set and replace it with the preset set
+Scope for this phase only:
+- Ctrl+Alt+T: track active window
+- Ctrl+Alt+Shift+T: untrack active window
+- Ctrl+Alt+L: view tracked list
+- The list window should re-focus when opened again from another window
+- If the list is open and a tracked/untracked action happens elsewhere, the list should refresh so the user sees the new state
+- Add Ctrl+Alt+X to clear all tracked windows
+- Ignore the list window itself and any temporary UI windows from being tracked
+- Visible tooltips for all successful or skipped actions
+- Keep the tracked list as runtime memory only
+- Do not include preset save/recall yet; that needs persistence and app registry support
+- The list should show tracked windows in newest-first order
 
 Phase 4: Add app registry + persistence
 Save app name and executable path to a central registry file
 Save preset data separately
+Save and recall preset slots with 1-9
+Loading a preset should clear the previous tracked set and replace it with the preset set
 When a preset is recalled:
 try to use the saved app path
 if the app is already open, use it
 if missing, prompt the user to browse to the executable
 save the new path in the registry if confirmed
 
-Phase 5: Build the master menu with 0
+Phase 5: Build the master UI and mini list UI
 0 opens the main UI
-Section 1: tracked windows
+Section 1: tracked windows list view
 Section 2: preset list with save/load/edit buttons
 Section 3: saved app registry entries with add/remove actions
+The tracked list should become a lightweight mini UI instead of a MsgBox, and it should stay open, refresh live, and refocus correctly when reopened
+This is now the preferred UI direction for the tracked-list behavior and is part of the Skyline UI layer
 
 Phase 6: Add preset editing
 Each preset gets:
@@ -62,3 +72,9 @@ Phase 8: Final polish and docs
 rename the minimize/restore file to something clean like MinAndRest.ahk
 update the README after MinAndRest is validated
 update the README again after Skyline is finished
+
+
+Problems to Adress Later:
+When list is run, if the menu goes out of focus, callign list again should bring 
+that same window into focus
+when list is called, that menu should refresh upon tracking/untracking
