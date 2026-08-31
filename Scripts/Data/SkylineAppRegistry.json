@@ -1,4 +1,1 @@
-GitHubDesktop.exe=C:\Users\chris\AppData\Local\GitHubDesktop\GitHubDesktop.exe
-Update.exe=C:\Users\chris\AppData\Local\Discord\Update.exe
-chrome_proxy.exe=C:\Program Files\Google\Chrome\Application\chrome_proxy.exe
-explorer.exe=C:\Windows\explorer.exe
+{"Apps": {"Code.exe": "C:\\Users\\chris\\AppData\\Local\\Programs\\Microsoft VS Code\\Code.exe", "Discord.exe": "C:\\Users\\chris\\AppData\\Local\\Discord\\app-1.0.9255\\Discord.exe"}}

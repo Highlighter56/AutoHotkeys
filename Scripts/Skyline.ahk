@@ -43,11 +43,23 @@ EnsureDataFiles()
 
     DirCreate(SkylineState["DataDir"])
 
+    createdAny := false
+
     if (!FileExist(SkylineState["RegistryPath"]))
+    {
         WriteTextFile(SkylineState["RegistryPath"], '{"Apps":{}}')
+        createdAny := true
+    }
 
     if (!FileExist(SkylineState["PresetsPath"]))
+    {
         WriteTextFile(SkylineState["PresetsPath"], '{"Presets":{}}')
+        createdAny := true
+    }
+
+    ; Phase 4A validation: keep this visible until we confirm the storage files are landing in the expected Data folder.
+    if (createdAny)
+        ShowStatus("Skyline data ready")
 }
 
 IsSkippableWindowClass(winClass)
@@ -243,6 +255,33 @@ OpenListWindow()
     ShowStatus("Tracked list opened")
 }
 
+ExtractAppInfoFromTrackedWindow(hwnd)
+{
+    if (!IsValidWindow(hwnd) || !SkylineState["TrackedWindows"].Has(hwnd))
+        return Map()
+
+    info := SkylineState["TrackedWindows"][hwnd]
+    processName := info["ProcessName"]
+
+    try
+    {
+        pid := WinGetPID("ahk_id " hwnd)
+        appPath := ProcessGetPath(pid)
+    }
+    catch
+    {
+        return Map()
+    }
+
+    if (!processName || !appPath)
+        return Map()
+
+    return Map(
+        "AppName", processName,
+        "ExecutablePath", appPath
+    )
+}
+
 GetAppRegistry()
 {
     global SkylineState
@@ -259,18 +298,51 @@ GetAppRegistry()
         return Map()
 
     registry := Map()
-    for line in StrSplit(raw, "`n", "`r")
+
+    ; Simple JSON parser for {"Apps": {"name": "path", ...}}
+    ; Extract the Apps object content
+    appsStart := InStr(raw, "{")
+    appsEnd := InStr(raw, "}", , -1)
+
+    if (!appsStart || !appsEnd || appsStart >= appsEnd)
+        return registry
+
+    content := SubStr(raw, appsStart + 1, appsEnd - appsStart - 1)
+    ; Look for "Apps": {..}
+    appsKey := InStr(content, "`"Apps`"")
+    if (!appsKey)
+        return registry
+
+    bracketStart := InStr(content, "{", , appsKey)
+    bracketEnd := InStr(content, "}", , bracketStart)
+    if (!bracketStart || !bracketEnd)
+        return registry
+
+    appsContent := SubStr(content, bracketStart + 1, bracketEnd - bracketStart - 1)
+
+    ; Parse each "name": "path" entry
+    for entry in StrSplit(appsContent, ",")
     {
-        line := Trim(line)
-        if (line = "")
+        entry := Trim(entry)
+        if (entry = "")
             continue
 
-        splitIndex := InStr(line, "=")
-        if (!splitIndex)
+        ; Remove leading quote from name
+        colonPos := InStr(entry, ":")
+        if (!colonPos)
             continue
 
-        appName := Trim(SubStr(line, 1, splitIndex - 1))
-        appPath := Trim(SubStr(line, splitIndex + 1))
+        nameQuoted := SubStr(entry, 1, colonPos - 1)
+        pathQuoted := SubStr(entry, colonPos + 1)
+
+        ; Strip quotes and whitespace
+        appName := Trim(StrReplace(StrReplace(nameQuoted, "`"", ""), " ", ""))
+        appPath := Trim(StrReplace(pathQuoted, "`"", ""))
+        appPath := Trim(appPath)
+        
+        ; Unescape backslashes from JSON format
+        appPath := StrReplace(appPath, "\\", "\")
+
         if (appName != "" && appPath != "")
             registry[appName] := appPath
     }
@@ -282,11 +354,18 @@ SaveAppRegistry(registry)
 {
     global SkylineState
 
-    lines := []
+    ; Build JSON: {"Apps": {"name": "path", ...}}
+    appEntries := []
     for appName, appPath in registry
-        lines.Push(appName "=" appPath)
+    {
+        ; Escape backslashes in paths for JSON
+        escapedPath := StrReplace(appPath, "\", "\\")
+        appEntries.Push('"' appName '": "' escapedPath '"')
+    }
 
-    WriteTextFile(SkylineState["RegistryPath"], lines.Length ? JoinArrayValues(lines, "`n") : "")
+    appsContent := JoinArrayValues(appEntries, ", ")
+    jsonStr := '{"Apps": {' appsContent '}}'
+    WriteTextFile(SkylineState["RegistryPath"], jsonStr)
 }
 
 GetPresetData()
@@ -305,25 +384,104 @@ GetPresetData()
         return Map()
 
     presets := Map()
-    for line in StrSplit(raw, "`n", "`r")
+
+    ; Simple approach: find all "N": [...] patterns where N is the slot key
+    ; Look for pattern like "1": [{...}], "2": [{...}]
+    
+    currentPos := 1
+    Loop
     {
-        line := Trim(line)
-        if (line = "")
-            continue
+        ; Find the next slot key (number in quotes)
+        quotePos := InStr(raw, '"', , currentPos)
+        if (!quotePos)
+            break
 
-        splitIndex := InStr(line, "=")
-        if (!splitIndex)
-            continue
+        nextQuote := InStr(raw, '"', , quotePos + 1)
+        if (!nextQuote)
+            break
 
-        slotKey := Trim(SubStr(line, 1, splitIndex - 1))
-        serializedValue := Trim(SubStr(line, splitIndex + 1))
-        if (slotKey = "")
+        slotKey := SubStr(raw, quotePos + 1, nextQuote - quotePos - 1)
+        
+        ; Check if next char after closing quote is a colon (indicating this is a key)
+        colonCheck := InStr(raw, ':', , nextQuote)
+        if (!colonCheck || colonCheck > nextQuote + 2)
+        {
+            currentPos := nextQuote + 1
             continue
+        }
 
-        if (serializedValue = "")
-            presets[slotKey] := []
-        else
-            presets[slotKey] := StrSplit(serializedValue, "|")
+        ; Found a slot. Now find its array value [...]
+        bracketStart := InStr(raw, '[', , colonCheck)
+        if (!bracketStart)
+        {
+            currentPos := nextQuote + 1
+            continue
+        }
+
+        bracketEnd := InStr(raw, ']', , bracketStart)
+        if (!bracketEnd)
+        {
+            currentPos := nextQuote + 1
+            continue
+        }
+
+        arrayContent := SubStr(raw, bracketStart + 1, bracketEnd - bracketStart - 1)
+        appRecords := []
+
+        ; Parse each {"AppName": "...", "ExecutablePath": "..."} in the array
+        objPos := 1
+        Loop
+        {
+            objStart := InStr(arrayContent, '{', , objPos)
+            if (!objStart)
+                break
+
+            objEnd := InStr(arrayContent, '}', , objStart)
+            if (!objEnd)
+                break
+
+            objStr := SubStr(arrayContent, objStart + 1, objEnd - objStart - 1)
+
+            ; Extract "AppName": "value"
+            appName := ""
+            appNamePos := InStr(objStr, '"AppName"')
+            if (appNamePos)
+            {
+                colonPos := InStr(objStr, ':', , appNamePos)
+                q1 := InStr(objStr, '"', , colonPos)
+                q2 := InStr(objStr, '"', , q1 + 1)
+                if (q1 && q2)
+                    appName := SubStr(objStr, q1 + 1, q2 - q1 - 1)
+            }
+
+            ; Extract "ExecutablePath": "value"
+            execPath := ""
+            exePos := InStr(objStr, '"ExecutablePath"')
+            if (exePos)
+            {
+                colonPos := InStr(objStr, ':', , exePos)
+                q1 := InStr(objStr, '"', , colonPos)
+                q2 := InStr(objStr, '"', , q1 + 1)
+                if (q1 && q2)
+                {
+                    rawPath := SubStr(objStr, q1 + 1, q2 - q1 - 1)
+                    ; Unescape the backslashes
+                    execPath := StrReplace(rawPath, "\\", "\")
+                }
+            }
+
+            if (appName && execPath)
+                appRecords.Push(Map("AppName", appName, "ExecutablePath", execPath))
+
+            objPos := objEnd + 1
+        }
+
+        if (appRecords.Length > 0)
+            presets[slotKey] := appRecords
+        else if (Trim(arrayContent) = "")
+            presets[slotKey] := []  ; Empty slot
+
+        currentPos := bracketEnd + 1
     }
 
     return presets
@@ -333,22 +491,43 @@ SavePresetData(data)
 {
     global SkylineState
 
-    lines := []
+    ; Build JSON: {"Presets": {"1": [{...}, ...], "2": [...], ...}}
+    slotEntries := []
     for slotKey, value in data
     {
-        if (IsObject(value))
-            lines.Push(slotKey "=" JoinArrayValues(value, "|"))
-        else
-            lines.Push(slotKey "=" value)
+        if (!IsObject(value) || value.Length = 0)
+        {
+            slotEntries.Push("`"" slotKey "`": []")
+            continue
+        }
+
+        ; Serialize array of app records
+        appEntries := []
+        for _, appRecord in value
+        {
+            if (IsObject(appRecord) && appRecord.Has("AppName") && appRecord.Has("ExecutablePath"))
+            {
+                appName := appRecord["AppName"]
+                execPath := appRecord["ExecutablePath"]
+                ; Escape backslashes for JSON
+                execPath := StrReplace(execPath, "\", "\\")
+                appEntries.Push("{`"AppName`": `"" appName "`", `"ExecutablePath`": `"" execPath "`"}")
+            }
+        }
+
+        appsJson := JoinArrayValues(appEntries, ", ")
+        slotEntries.Push("`"" slotKey "`": [" appsJson "]")
     }
 
-    WriteTextFile(SkylineState["PresetsPath"], lines.Length ? JoinArrayValues(lines, "`n") : "")
+    presetsJson := JoinArrayValues(slotEntries, ", ")
+    jsonStr := "{`"Presets`": {" presetsJson "}}"
+    WriteTextFile(SkylineState["PresetsPath"], jsonStr)
 }
 
-GetTrackedAppPaths()
+GetTrackedAppRecords()
 {
     global SkylineState
-    paths := []
+    records := []
     seen := Map()
 
     for _, hwnd in SkylineState["TrackedOrder"]
@@ -356,35 +535,33 @@ GetTrackedAppPaths()
         if (!IsValidWindow(hwnd) || !SkylineState["TrackedWindows"].Has(hwnd))
             continue
 
-        try
-        {
-            pid := WinGetPID("ahk_id " hwnd)
-            appPath := ProcessGetPath(pid)
-        }
-        catch
-        {
+        appInfo := ExtractAppInfoFromTrackedWindow(hwnd)
+        if (appInfo.Count = 0)
             continue
-        }
 
-        normalized := NormalizePath(appPath)
+        normalized := NormalizePath(appInfo["ExecutablePath"])
         if (!normalized || seen.Has(normalized))
             continue
 
-        paths.Push(appPath)
+        records.Push(appInfo)
         seen[normalized] := true
     }
 
-    return paths
+    return records
 }
 
 RegisterAppPath(appName, executablePath)
 {
     if (!appName || !executablePath)
-        return
+        return false
 
     registry := GetAppRegistry()
     registry[appName] := executablePath
     SaveAppRegistry(registry)
+
+    ; Phase 4B validation: show tooltip when app is registered
+    ShowStatus("Registered: " appName)
+    return true
 }
 
 FindOpenWindowForPath(executablePath)
@@ -430,10 +607,31 @@ SavePreset(slot)
     global SkylineState
 
     slotKey := String(slot)
+    appRecords := GetTrackedAppRecords()
+
+    if (appRecords.Length = 0)
+    {
+        ShowStatus("No tracked apps to save")
+        return
+    }
+
+    ; Phase 4C: Register each app in the registry before saving preset
+    for _, appInfo in appRecords
+        RegisterAppPath(appInfo["AppName"], appInfo["ExecutablePath"])
+
+    ; Read existing presets to preserve other slots
     presetData := GetPresetData()
-    presetData[slotKey] := GetTrackedAppPaths()
+    
+    ; Update only this slot
+    presetData[slotKey] := appRecords
+    
+    ; Save all presets
     SavePresetData(presetData)
-    ShowStatus("Saved preset " slot)
+    
+    ; Refresh list to show that apps are still tracked and persisted
+    RefreshListWindow(false)
+    
+    ShowStatus("Saved preset " slot " (" appRecords.Length " apps)")
 }
 
 LoadPreset(slot)
@@ -448,38 +646,64 @@ LoadPreset(slot)
     }
 
     entries := presetData[slotKey]
-    if (!IsObject(entries))
-        entries := StrSplit(entries, "|")
+    if (entries.Length = 0)
+    {
+        ShowStatus("Preset " slot " empty")
+        return
+    }
 
     SkylineState["TrackedOrder"] := []
     SkylineState["TrackedWindows"] := Map()
 
-    for _, executablePath in entries
+    ; entries is now an array of Maps with AppName and ExecutablePath
+    foundCount := 0
+    for _, appRecord in entries
     {
+        if (!IsObject(appRecord) || !appRecord.Has("ExecutablePath"))
+            continue
+
+        executablePath := appRecord["ExecutablePath"]
+        appName := appRecord["AppName"]
+
         if (!executablePath)
             continue
 
+        ; First, try to find if the app is already running
         hwnd := FindOpenWindowForPath(executablePath)
         if (hwnd)
         {
-            TrackWindow(hwnd)
+            if (TrackWindow(hwnd))
+                foundCount += 1
             continue
         }
 
-        chosenPath := BrowseForExecutable("Locate executable for preset " slot)
+        ; App is not running. Try to use the saved path directly.
+        if (FileExist(executablePath))
+        {
+            ; Path is still valid, launch it
+            Run(executablePath)
+            Sleep(250)
+            hwnd := FindOpenWindowForPath(executablePath)
+            if (hwnd && TrackWindow(hwnd))
+                foundCount += 1
+            continue
+        }
+
+        ; Saved path no longer exists. Ask user to locate it.
+        chosenPath := BrowseForExecutable("Locate: " appName)
         if (!chosenPath)
             continue
 
-        SplitPath(chosenPath, &fileName)
-        RegisterAppPath(fileName, chosenPath)
+        RegisterAppPath(appName, chosenPath)
         Run(chosenPath)
         Sleep(250)
         hwnd := FindOpenWindowForPath(chosenPath)
-        if (hwnd)
-            TrackWindow(hwnd)
+        if (hwnd && TrackWindow(hwnd))
+            foundCount += 1
     }
 
-    ShowStatus("Activated preset " slot)
+    RefreshListWindow(false)
+    ShowStatus("Activated preset " slot " (" foundCount " apps)")
 }
 
 ClearTrackedWindows(showNotice := true)
@@ -491,6 +715,8 @@ ClearTrackedWindows(showNotice := true)
     if (showNotice)
         ShowStatus("Cleared tracked windows")
 }
+
+EnsureDataFiles()
 
 ; --- TRACK ACTIVE WINDOW: Ctrl + Alt + T ---
 ^!t::

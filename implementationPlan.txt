@@ -27,16 +27,48 @@ Scope for this phase only:
 - Do not include preset save/recall yet; that needs persistence and app registry support
 - The list should show tracked windows in newest-first order
 
-Phase 4: Add app registry + persistence
-Save app name and executable path to a central registry file
-Save preset data separately
-Save and recall preset slots with 1-9
-Loading a preset should clear the previous tracked set and replace it with the preset set
-When a preset is recalled:
-try to use the saved app path
-if the app is already open, use it
-if missing, prompt the user to browse to the executable
-save the new path in the registry if confirmed
+Phase 4: Add app registry + persistence [COMPLETE]
+
+Phase 4A: Define the storage model and file layout [DONE]
+- ✓ Create a Data folder beside the script
+- ✓ Save app registry entries as name + executable path
+- ✓ Save preset entries separately from the registry
+- ✓ Keep tracked runtime state in memory only
+- ✓ Validation tooltip when registry and preset files are created
+
+Phase 4B: Build the app registry [DONE]
+- ✓ Add a RegistryPath value and a registry read/write helper with proper JSON format
+- ✓ Save app names and executable paths as a stable record
+- ✓ Prompt user with the app label to reselect if path is missing
+- ✓ Show validation tooltip when app is registered
+- ✓ FIX: Unescap backslashes when reading from JSON to prevent double-escaping
+
+Phase 4C: Save a preset slot [DONE]
+- ✓ Save the current tracked set into the selected preset slot
+- ✓ Persist each tracked app as a name + executable path pair
+- ✓ Replace the slot value instead of appending
+- ✓ Register each app in the registry during save
+- ✓ Show validation tooltip after saving with app count
+- ✓ FIX: Preserve existing presets when saving new ones
+- ✓ Refresh list window after save to show persisted state
+
+Phase 4D: Load a preset slot [DONE]
+- ✓ Read the selected preset slot
+- ✓ For each saved app entry, check if it is already open
+- ✓ If it is open, use that window
+- ✓ If it is not open, use the saved path directly (launch it)
+- ✓ If the saved path is invalid or missing, prompt user to locate it
+- ✓ Replace previous tracked set with preset set after load
+- ✓ Show validation tooltip after activation with count found
+- ✓ Refresh list window after load
+
+Phase 4E: Validation and cleanup [DONE]
+- ✓ Temporary debug tooltips in place for validation
+- ✓ Multiple presets can be saved and loaded independently
+- ✓ App registry persists across restarts
+- ✓ Preset data uses proper JSON format
+- ✓ Backslash escaping is correct (no double-escaping)
+- Note: Debug tooltips left in place for now per user request (will clean in final phase)
 
 Phase 5: Build the master UI and mini list UI
 0 opens the main UI
@@ -74,7 +106,11 @@ update the README after MinAndRest is validated
 update the README again after Skyline is finished
 
 
-Problems to Adress Later:
+Problems/Notes to Adress Later:
 When list is run, if the menu goes out of focus, callign list again should bring 
 that same window into focus
 when list is called, that menu should refresh upon tracking/untracking
+Should Skyline get its own directory in scripts, to group the main ahk script
+and the Data directory? Or, if this same data might be used in other scripts 
+later down the line, could it make sense to rename that more generaly instead
+of skyline...
