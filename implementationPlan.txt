@@ -106,11 +106,18 @@ update the README after MinAndRest is validated
 update the README again after Skyline is finished
 
 
-Problems/Notes to Adress Later:
+-------Problems/Notes to Adress Later-------
 When list is run, if the menu goes out of focus, callign list again should bring 
 that same window into focus
+
 when list is called, that menu should refresh upon tracking/untracking
+
 Should Skyline get its own directory in scripts, to group the main ahk script
 and the Data directory? Or, if this same data might be used in other scripts 
 later down the line, could it make sense to rename that more generaly instead
 of skyline...
+
+In preset.json and appregistry.json : 
+preset does not need to contain path to app. I should only contain the app name. 
+Then upon call, that name can be looked up in registry to find the path.
+--------------------------------------------

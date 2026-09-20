@@ -1,2 +1,9 @@
-notes.txt
+# My Notes
+# notes.md
+
+# My Temp Files
+*.temp*
+
+# Any Generated Scripts
 Scripts/Data/*
+# *.json

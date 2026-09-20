@@ -33,10 +33,12 @@
 ### Identified Problems
 
 <ul class="boxed-list">
+	--Notes on Phase 4-- <br>
 	<li>
-		--Notes on Phase 4-- <br>
 		When saving presets, does it check if a preset for that number already exitst?	
 	</li>
+	<br>
+	--General-- <br>
 	<li>
 		I dont know whats going on in the code
 	</li>
