@@ -90,8 +90,11 @@
 ### Goal
 	On hotkey, minimize the active window, remember it, and reactivate upon call.
 
+### Expantion
+	Add hotkey that will minimize and remember all the active windows. Then you can do/open anything else, and then on call reopen all previous tabs to there exact monitor geomitry
+
 ### Current State
-	Perfect.
+	Works with a single application, expantion is just an idea...
 
 <style>
 	.title {
