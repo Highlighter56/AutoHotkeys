@@ -11,7 +11,7 @@
 	
 	ctrl+shift+window
 		If Off and Pressed: Activates
-		If On and Pressed: 	Quites
+		If On and Pressed: 	Force Quites
 
 ### Current State
 	Just an idea...
@@ -25,7 +25,7 @@
 </div>
 
 ### Goal
-	Be able to save save groupings of windows and there geometry to presets with persistence. Then be able to call upon those presets when needed.
+	Be able to save save groupings of windows and there monitor geometry to persistent presets. Then, be able to call upon those presets when needed.
 
 ### Current State
 	Can Track tabs.
@@ -33,45 +33,53 @@
 ### Identified Problems
 
 <ul class="boxed-list">
-	--Notes on Phase 4-- <br>
+	<!-- --Notes on Phase 4-- <br> -->
 	<li>
-		When saving presets, does it check if a preset for that number already exitst?	
+		Saving .exe location for apps
 	</li>
-	<br>
-	--General-- <br>
 	<li>
-		I dont know whats going on in the code
+		can only save one preset at a time, and it will always override	
+	</li>
+	<!-- <br> -->
+	<!-- --General-- <br> -->
+	<li>
+		To many small patch jobs, the larger code needs to be refactored so it actualy makes sense, then we can get on track with further development
 	</li>
 </ul>
 
 ### Next
 	Analyse where we are.
 
-	Many issues came up while working with copilot, and I truly dont understand whats going on in the code. 
+	Many issues came up while working with copilot to build and patch, now I truly dont understand whats going on in the code. 
 	
-	I think it would be best if we took a step back, and mapped out the design for the project. 
+	Take a step back, map user goals, system goals, visuals, funcionality/hotkey triggers, mapped out greater design for the project again.
 
 ### Plan
 
 <ol class="boxed-list">
 	<li>
 		Plan out Full Functionality <br>
-		&emsp;- All Key Binds <br>
-		&emsp;- All Functions <br>
-		&emsp;- Any Menus <br>
+		<ul>
+			<li>All Key Binds</li>
+			<li>All Functions</li>
+			<li>Any Menus</li>
+		</ul>
 	</li>
 	<li>
 		Choose Technologies <br>
-		&emsp;- AHK as a listener with batch/script for functionality? <br>
-		&emsp;- Maybe Somehting else! Do research <br>
+		<ul>
+			<li>AHK as a listener with batch/script for functionality?</li>
+			<ul><li>Win32 is a Windows API that allows you to make system calls, potential useful?</li></ul>
+			<li>Maybe Somehting else! Do research</li>
+		</ul>
 	</li>
 	<li>
 		Plan out Implementation <br>
-		&emsp;- What order to design things <br>
+		<ul><li>What order to design things</li></ul>
 	</li>
 	<li>
 		Code, Test, and have Fun! <br>
-		&emsp;- Work when I have time, then enjoy an amazing product : ) <br>
+		<ul><li>Work when I have time, then enjoy an amazing product : )</li></ul>
 	</li>
 </ol>
 
