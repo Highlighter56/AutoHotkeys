@@ -83,6 +83,31 @@
 	</li>
 </ol>
 
+### Ideas
+
+<ul class="boxed-list">
+	<li>
+		Im trying to add so much functionality to windows through BetterHotkeys and Skyline, maybe I just switch to windows? 
+		<ul><li>Can I play games on linux / host a windows virtual machine?</li></ul>
+	</li>
+	<li>
+		Brainstorm / research effective ways to open applications:
+		<ul>
+			<li> Saving there path to where there located and running from there</li>
+			<li> start chrome (this is a terminal command that if an app is saved as a system variable, you can launch it just like this. Try start spotify, this also works) - could it be done so instead of adding a bunch of apps to system variables, we just add skyline as a system variable / a saved path to a folder where app paths are stored? That way we just add the paths to that folder?</li>
+		</ul>
+	</li>
+	<li>
+		Track, Save, Store, and Recall Groups of Tabs
+	</li>
+	<li>
+		Monitor Switch - add monitor switch into skyline
+	</li>
+	<li>
+		Force App on Top / bottom - the way the virtual keyboard can stay on top, forcing another app to do this would be kind of cool
+	</li>
+</ul>
+
 
 <!-- Minimize and Restore -->
 ## <div class="script-title"> Minimize and Restore </div>
